@@ -57,7 +57,8 @@ def run():
                     # print(count)
 
     file.close()
-
+    Ag = ''
+    AgAb = ''
 
     with open('temp.csv') as csvDataFile2:
         csvReader2 = csv.reader(csvDataFile2)
@@ -66,7 +67,11 @@ def run():
         dictres = defaultdict(list)
         timepointDic = {}
         peptideList = []
-        for row in sortedlist:
+        for x,row in enumerate(sortedlist):
+            if x == 0:
+                Ag = row[0]
+            if x == len(sortedlist) - 1:
+                AgAb = row[0]
             timepointDic[row[1]] = timepointDic.get(row[1], 0) + 1
             key = row[0] +'-'+ row[1]
             if row[1] == '0s':
@@ -84,26 +89,38 @@ def run():
         print('total key: '+ str(len(keylist)))
         print(keylist)
 
-        header = ''
-        for j in range(len(keylist)):
-            if (j == len(keylist)/2):
-                continue
-            if j == 0:
-                header = header + "Peptide Range" + ','
-            else:
-                header = header + keylist[j] +','
-
-        header = header + ',' + ',' + ',' + 'Peptide Range(Differential)' +','
-
-
         timepointList = list(timepointDic.keys())
         print(timepointDic)
+        header = ''
+        header = header + "Peptide"+','+"Peptide Range" + ','
+        # for j in range(len(keylist)):
+        #     if (j == len(keylist)/2):
+        #         continue
+        #     if j == 0:
+        #         header = header + "Peptide"+','+"Peptide Range" + ','
+        #     else:
+        #         header = header + keylist[j] +','
+
+        # header = header + ',' + ',' + ',' + 'Peptide Range(Differential)' +','
+
+        
+        for k in range(1, len(timepointDic)):
+            header = header + timepointList[k] + ','
+        
+        
+        for k in range(1, len(timepointDic)):
+            header = header + timepointList[k] + ','
+
+        header += ','
+
+
+      
 
         for k in range(1, len(timepointDic)):
             header = header + timepointList[k] + ','
 
 
-        header = header + 'Peptide' + ',' + 'Dmax' + ',' + ',' + ',' + 'Peptide Range(Differential/Da)' +','
+        header = header + ','  + 'Dmax' + ','  +','
         for k in range(1, len(timepointDic)):
             header = header + timepointList[k] + ','
 
@@ -112,31 +129,38 @@ def run():
             if timepointDic[timepointList[k]] != timepointDic[timepointList[k+1]]:
                 return 99
 
-        outputFileName = 'Deuterium Exchange Plot_' + sys.argv[1]
+        outputFileName = 'Deuterium Uptake_' + sys.argv[1]
         file2 = open(outputFileName, 'w')
+        file2.write(','+','+'D% ' + 'for ' + Ag + ' alone'+','+','+','+','+'D% ' + 'for ' + AgAb+','+','+','+','+','+'Delta D%( ' + Ag+ ' VS '+AgAb +')'+','+','+','+','+','+','+','+'Delta D( ' + Ag+ ' VS '+AgAb +')')
+
+
+        file2.write('\n')
+
         file2.write(header)
         file2.write('\n')
         print(keylist)
         for i in range(len(res[keylist[0]])):
             finalres = ''
-            for j in range(len(keylist)):
+            finalres += peptideList[2*i]+','
+            finalres += res[keylist[0]][i]+','
+            for j in range(1,len(keylist)):
                 if (j == len(keylist)/2):
                     continue
                 if j < len(keylist)//2 :
-                    finalres = finalres + res[keylist[j]][i] + ','
+                    finalres = finalres + "{0:.1f}".format(float(res[keylist[j]][i])) + ','
                 else:
-                    finalres = finalres + '-' +res[keylist[j]][i] + ','
-            finalres = finalres +',' + ',' +',' + res[keylist[0]][i] +','
+                    finalres = finalres  +"{0:.1f}".format(float(res[keylist[j]][i])) + ','
+            finalres = finalres +',' 
             DaDiffList = []
             for x in range(1,len(keylist)//2):
                 DaDiffList.append(float(res[keylist[x + len(keylist)//2]][i]) - float(res[keylist[x]][i]))
-                finalres = finalres + str(float(res[keylist[x + len(keylist)//2]][i]) - float(res[keylist[x]][i])) + ','
-            finalres += peptideList[2*i]+','
+                finalres = finalres + str("{0:.1f}".format(float(res[keylist[x + len(keylist)//2]][i]) - float(res[keylist[x]][i]))) + ','
+            finalres += ','
             Dmax = len((peptideList[2*i][2:len(peptideList[2*i])]).replace('P', ''))
             finalres += str(Dmax)
-            finalres = finalres + ',' + ',' + ',' + res[keylist[0]][i] + ','
+            finalres = finalres + ',' + ',' 
             for p in range(len(DaDiffList)):
-                finalres = finalres + str(DaDiffList[p]*Dmax/100) +','
+                finalres = finalres + str("{0:.1f}".format(DaDiffList[p]*Dmax/100)) +','
 
             file2.write(finalres)
             file2.write('\n')
